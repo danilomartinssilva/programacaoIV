@@ -1,0 +1,92 @@
+import * as restify from 'restify';
+import { User } from './users/users.model';
+
+//Criar o servidor
+
+const server = restify.createServer({
+    name:'meat-api', //nom do servidor
+    version:'1.0.0', //versao 
+});
+//Mostra o valor da propriedade query em forma de um objeto json
+/* server.use(restify.plugins.queryParser()); */
+
+//Rotas
+server.get('/hello',(req,resp,next)=>{
+    /* resp.contentType='application/json'; */
+    // resp.setHeader('Content-Type','application/json');
+    // resp.status(400);//ALTERAR O STATUS CODE
+    resp.send({message:'Opa'});
+    return next();//Usado quando a finalizao termina
+});
+/* server.get('/hello',(req,res,next)=>{
+    res.send({message:'Opa'});
+    return next();
+}); */
+
+server.get('/info',(req,resp,next)=>{
+    resp.json({
+        browser:req.userAgent(),//Mostra o nome do navegeador
+        method:req.method,//Mostra o metodo
+        url:req.href(),//Mostra a URL
+        path:req.path(),//
+        query:req.query()
+    })
+    return next();
+});
+//Multiplas callbacks
+server.get('/teste',[
+    (req,resp,next)=>{
+     if(req.userAgent() && req.userAgent().includes('MSIE 7.0')){
+         resp.status(400);
+         resp.json({message:"Você está usando um navegador ruim d+++"});   
+         return next(false);
+     }
+     return next();
+    },
+    (req,resp,next)=>{
+        resp.json({
+            browser:req.userAgent(),//Mostra o nome do navegeador
+            method:req.method,//Mostra o metodo
+            url:req.href(),//Mostra a URL
+            path:req.path(),//
+            query:req.query()
+        })
+        return next();
+    },
+]);
+
+server.get('/users',(req,resp,next)=>{
+    User.findAll().then(users=>{
+        resp.json(users);
+        return next();
+    })
+
+})
+server.get('/users/:id',(req,resp,next)=>{
+
+     User.findById(req.params.id).then(user=>{
+        if(user){
+            resp.json(user);
+            return next();
+        }
+            resp.send(404);
+            return next();
+    }) 
+    /* resp.json({message:"Teste"});
+    return next(); */
+
+})
+server.del('/users/:id',(req,resp,next)=>{
+    console.log("Chamou este serviço")
+
+     User.deleteById(req.params.id);
+     resp.json("Excluído com sucesso");
+     return next();
+    /* resp.json({message:"Teste"});
+    return next(); */
+
+})
+
+server.listen(3000,()=>{
+    console.log("O serviço está funcionando com sucesso");
+})
